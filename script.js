@@ -87,7 +87,7 @@ function createRealisticRoseSprite(config) {
   const {
     radius = 68,
     paletteKey = 'sweetBlush',
-    variety = 'garden', // 'garden' | 'classic' | 'peony' | 'bud'
+    variety = 'garden',
     tiltX = 0,
     tiltY = 0,
     seed = 101,
@@ -107,9 +107,7 @@ function createRealisticRoseSprite(config) {
     return { canvas: c, ctx: lCtx };
   }
 
-  // Layer 0: Base shadow & green calyx sepals
   const baseLayer = createLayerCanvas();
-  // 4 Concentric Whorl Layers: [0: Outer Guard, 1: Mid-Outer, 2: Inner Velvet, 3: Heart Spiral]
   const whorlLayers = [
     createLayerCanvas(),
     createLayerCanvas(),
@@ -122,42 +120,265 @@ function createRealisticRoseSprite(config) {
   const rand = createSeededRandom(seed);
   const pal = ROSE_PALETTES[paletteKey] || ROSE_PALETTES.sweetBlush;
 
-  // 1. Soft Ambient Occlusion Base Shadow & Sepals on baseLayer
-  const bCtx0 = baseLayer.ctx;
-  bCtx0.save();
-  const baseShadow = bCtx0.createRadialGradient(
-    cx + tiltX * 4, cy + radius * 0.14 + tiltY * 4, radius * 0.18,
-    cx, cy + radius * 0.1, radius * 1.32
+  // Vẽ bóng và đài hoa xanh phía sau cụm cẩm tú cầu.
+  const baseCtx = baseLayer.ctx;
+  const shadowTone = '#3E1220';
+  const baseShadow = baseCtx.createRadialGradient(
+    cx + tiltX * 4,
+    cy + radius * 0.12 + tiltY * 4,
+    radius * 0.12,
+    cx,
+    cy + radius * 0.08,
+    radius * 1.15
   );
-  baseShadow.addColorStop(0, 'rgba(62, 18, 32, 0.36)');
-  baseShadow.addColorStop(0.65, 'rgba(62, 18, 32, 0.13)');
-  baseShadow.addColorStop(1, 'rgba(62, 18, 32, 0)');
-  bCtx0.fillStyle = baseShadow;
-  bCtx0.beginPath();
-  bCtx0.arc(cx, cy + radius * 0.1, radius * 1.32, 0, Math.PI * 2);
-  bCtx0.fill();
-  bCtx0.restore();
 
-  // Green calyx sepals peeking out (visible especially when rose is in bud state or tilted)
-  const sepalCount = variety === 'bud' ? 5 : 4;
+  baseShadow.addColorStop(0, rgbaStr(shadowTone, 0.32));
+  baseShadow.addColorStop(0.62, rgbaStr(shadowTone, 0.12));
+  baseShadow.addColorStop(1, rgbaStr(shadowTone, 0));
+
+  baseCtx.fillStyle = baseShadow;
+  baseCtx.beginPath();
+  baseCtx.arc(cx, cy + radius * 0.08, radius * 1.15, 0, Math.PI * 2);
+  baseCtx.fill();
+
+  const sepalCount = variety === 'bud' ? 5 : 7;
+
   for (let s = 0; s < sepalCount; s++) {
-    const sAngle = Math.atan2(tiltY, tiltX) + (s / sepalCount) * Math.PI * 2 + (rand() - 0.5) * 0.35;
-    const sLen = radius * (variety === 'bud' ? 1.16 : 1.04);
-    bCtx0.save();
-    bCtx0.translate(cx, cy);
-    bCtx0.rotate(sAngle);
-    bCtx0.beginPath();
-    bCtx0.moveTo(0, -radius * 0.14);
-    bCtx0.quadraticCurveTo(sLen * 0.55, -radius * 0.26, sLen, -radius * 0.02);
-    bCtx0.quadraticCurveTo(sLen * 0.55, radius * 0.22, 0, radius * 0.14);
-    bCtx0.closePath();
-    const sepGrad = bCtx0.createLinearGradient(0, 0, sLen, 0);
-    sepGrad.addColorStop(0, '#36563E');
-    sepGrad.addColorStop(0.7, '#52785A');
-    sepGrad.addColorStop(1, '#789E7D');
-    bCtx0.fillStyle = sepGrad;
-    bCtx0.fill();
-    bCtx0.restore();
+    const angle =
+      Math.atan2(tiltY, tiltX) +
+      s / sepalCount * Math.PI * 2 +
+      (rand() - 0.5) * 0.28;
+
+    const length = radius * (variety === 'bud' ? 0.78 : 0.92);
+
+    baseCtx.save();
+    baseCtx.translate(cx, cy + radius * 0.05);
+    baseCtx.rotate(angle);
+    baseCtx.beginPath();
+    baseCtx.moveTo(-radius * 0.05, radius * 0.04);
+    baseCtx.quadraticCurveTo(length * 0.32, -radius * 0.2, length, 0);
+    baseCtx.quadraticCurveTo(
+      length * 0.32,
+      radius * 0.2,
+      -radius * 0.05,
+      radius * 0.04
+    );
+    baseCtx.closePath();
+
+    const sepalGradient = baseCtx.createLinearGradient(0, 0, length, 0);
+    sepalGradient.addColorStop(0, '#36563E');
+    sepalGradient.addColorStop(0.65, '#52785A');
+    sepalGradient.addColorStop(1, '#89A989');
+
+    baseCtx.fillStyle = sepalGradient;
+    baseCtx.fill();
+    baseCtx.restore();
+  }
+
+  // Vẽ từng bông cẩm tú cầu gồm bốn cánh tròn.
+  function drawHydrangeaFloret(
+    ctx, x, y, size, angle, floretSeed, shade
+  ) {
+    const floretRand = createSeededRandom(floretSeed);
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+
+    const shadeColor = shade === 0 ? pal.deepCore
+      : shade === 1 ? pal.innerShadow
+      : shade === 2 ? pal.midBelly
+      : shade === 3 ? pal.outerBlush
+      : pal.lipHighlight;
+
+    for (let p = 0; p < 4; p++) {
+      ctx.save();
+      ctx.rotate(
+        p * Math.PI / 2 +
+        (floretRand() - 0.5) * 0.12
+      );
+
+      const petalScale = 0.9 + floretRand() * 0.16;
+      ctx.scale(petalScale, petalScale);
+
+      ctx.beginPath();
+      ctx.moveTo(0, size * 0.035);
+      ctx.bezierCurveTo(
+        -size * 0.16, -size * 0.015,
+        -size * 0.31, -size * 0.22,
+        -size * 0.22, -size * 0.39
+      );
+      ctx.quadraticCurveTo(
+        -size * 0.1, -size * 0.57,
+        0, -size * 0.46
+      );
+      ctx.quadraticCurveTo(
+        size * 0.1, -size * 0.57,
+        size * 0.22, -size * 0.39
+      );
+      ctx.bezierCurveTo(
+        size * 0.31, -size * 0.22,
+        size * 0.16, -size * 0.015,
+        0, size * 0.035
+      );
+      ctx.closePath();
+
+      const petalGradient = ctx.createLinearGradient(
+        -size * 0.18,
+        -size * 0.04,
+        size * 0.12,
+        -size * 0.52
+      );
+
+      petalGradient.addColorStop(0, pal.innerShadow);
+      petalGradient.addColorStop(0.38, shadeColor);
+      petalGradient.addColorStop(0.82, pal.outerBlush);
+      petalGradient.addColorStop(1, pal.lipHighlight);
+
+      ctx.fillStyle = petalGradient;
+      ctx.shadowColor = pal.creviceShadow;
+      ctx.shadowBlur = size * 0.045;
+      ctx.shadowOffsetY = size * 0.018;
+      ctx.fill();
+
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = rgbaStr(pal.lipHighlight, 0.62);
+      ctx.lineWidth = Math.max(0.45, size * 0.012);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    const centerGradient = ctx.createRadialGradient(
+      -size * 0.02,
+      -size * 0.025,
+      size * 0.005,
+      0,
+      0,
+      size * 0.085
+    );
+
+    centerGradient.addColorStop(0, pal.lipHighlight);
+    centerGradient.addColorStop(0.6, pal.outerBlush);
+    centerGradient.addColorStop(1, pal.deepCore);
+
+    ctx.fillStyle = centerGradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.07, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Ghép các bông nhỏ thành cụm cẩm tú cầu.
+  const normalRings = [
+    { count: 13, distance: 0.53, size: 0.39, offset: 0.10 },
+    { count: 11, distance: 0.36, size: 0.37, offset: 0.39 },
+    { count: 8, distance: 0.19, size: 0.34, offset: 0.17 },
+    { count: 5, distance: 0.055, size: 0.30, offset: 0.71 }
+  ];
+
+  const budRings = [
+    { count: 8, distance: 0.39, size: 0.30, offset: 0.10 },
+    { count: 6, distance: 0.23, size: 0.28, offset: 0.39 },
+    { count: 4, distance: 0.09, size: 0.25, offset: 0.17 },
+    { count: 2, distance: 0.015, size: 0.22, offset: 0.71 }
+  ];
+
+  const rings = variety === 'bud' ? budRings : normalRings;
+
+  rings.forEach((ring, layerIndex) => {
+    const layerCtx = whorlLayers[layerIndex].ctx;
+
+    for (let i = 0; i < ring.count; i++) {
+      const angle =
+        ring.offset +
+        i * Math.PI * 2 / ring.count +
+        (rand() - 0.5) * 0.18;
+
+      const jitter = 0.92 + rand() * 0.16;
+      const floretX =
+        cx +
+        Math.cos(angle) * radius * ring.distance * jitter +
+        tiltX * radius * 0.16;
+
+      const floretY =
+        cy +
+        Math.sin(angle) * radius * ring.distance * jitter +
+        tiltY * radius * 0.16;
+
+      const floretSize =
+        radius * ring.size * (0.92 + rand() * 0.16);
+
+      drawHydrangeaFloret(
+        layerCtx,
+        floretX,
+        floretY,
+        floretSize,
+        rand() * Math.PI * 2,
+        seed + layerIndex * 73 + i * 17,
+        Math.floor(rand() * 5)
+      );
+    }
+  });
+
+  // Giữ hiệu ứng giọt sương nếu hoa được cấu hình có sương.
+  if (hasDewdrop) {
+    const dewCtx = whorlLayers[0].ctx;
+    const dewAngle = rand() * Math.PI * 2;
+    const dewDist = radius * (0.48 + rand() * 0.18);
+    const dx = cx + Math.cos(dewAngle) * dewDist;
+    const dy = cy + Math.sin(dewAngle) * dewDist;
+    const dr = 3.0 + rand() * 1.8;
+
+    dewCtx.save();
+    dewCtx.fillStyle = 'rgba(110, 25, 50, 0.2)';
+    dewCtx.beginPath();
+    dewCtx.ellipse(
+      dx + 1, dy + 1.4,
+      dr, dr * 0.8, 0.2,
+      0, Math.PI * 2
+    );
+    dewCtx.fill();
+
+    const dewGradient = dewCtx.createRadialGradient(
+      dx - dr * 0.3, dy - dr * 0.3, 0.5,
+      dx, dy, dr
+    );
+
+    dewGradient.addColorStop(0, 'rgba(255, 255, 255, 0.96)');
+    dewGradient.addColorStop(0.45, 'rgba(255, 235, 242, 0.55)');
+    dewGradient.addColorStop(0.85, 'rgba(245, 180, 200, 0.35)');
+    dewGradient.addColorStop(1, 'rgba(255, 255, 255, 0.78)');
+
+    dewCtx.fillStyle = dewGradient;
+    dewCtx.beginPath();
+    dewCtx.ellipse(
+      dx, dy, dr, dr * 0.85,
+      -0.2, 0, Math.PI * 2
+    );
+    dewCtx.fill();
+
+    dewCtx.fillStyle = '#FFFFFF';
+    dewCtx.beginPath();
+    dewCtx.arc(
+      dx - dr * 0.35,
+      dy - dr * 0.35,
+      dr * 0.28,
+      0,
+      Math.PI * 2
+    );
+    dewCtx.fill();
+    dewCtx.restore();
+  }
+
+  return {
+    baseCanvas: baseLayer.canvas,
+    whorlCanvases: whorlLayers.map(layer => layer.canvas),
+    logicalSize,
+    radius,
+    palette: pal
+  };
   }
 
   /**
