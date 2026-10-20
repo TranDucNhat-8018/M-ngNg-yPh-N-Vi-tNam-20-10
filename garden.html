@@ -197,32 +197,17 @@
           <p class="signature" id="cardSignature">Gửi bạn thật nhiều thương mến ♡</p>
           <div class="letter-actions">
             <button class="view-garden" id="viewGarden" type="button" autofocus>Ngắm vườn hoa</button>
-            <button class="view-garden" id="editCard" type="button">Viết lời chúc riêng</button>
+            
           </div>
         </div>
-        <form class="card-editor" id="cardEditor" hidden>
-          <h2 id="editorTitle">Viết chút yêu thương</h2>
-          <label for="recipientInput">Gửi đến</label>
-          <input id="recipientInput" name="recipient" maxlength="60" required autocomplete="off">
-          <label for="titleInput">Tiêu đề thiệp</label>
-          <textarea id="titleInput" name="title" rows="2" maxlength="160" required></textarea>
-          <label for="messageInput">Lời chúc 20/10</label>
-          <textarea id="messageInput" name="message" rows="7" maxlength="3000" required></textarea>
-          <label for="signatureInput">Chữ ký</label>
-          <input id="signatureInput" name="signature" maxlength="120" required autocomplete="off">
-          <p class="editor-hint">Lời chúc được lưu trên trình duyệt này. Cách một dòng để bắt đầu đoạn mới.</p>
-          <div class="editor-actions">
-            <button class="save-card" type="submit">Lưu lời chúc</button>
-            <button class="view-garden" id="cancelEdit" type="button">Hủy</button>
-          </div>
-        </form>
+        
         <p class="card-status" id="cardStatus" role="status" aria-live="polite"></p>
       </article>
     </dialog>
     <noscript><p class="noscript">Bật JavaScript để chạm vào hoa và mở thiệp nhé.<br>Chúc bạn ngày 20/10 bình an, rạng rỡ và tràn đầy yêu thương!</p></noscript>
   </main>
   <script src="./garden-botany.js"></script>
-  <script src="./garden-card.js"></script>
+  
   <script>
     (() => {
       'use strict';
