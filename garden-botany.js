@@ -595,7 +595,7 @@ function createRoseBudSprite({ radius = 28, paletteKey = 'sweetBlush' } = {}) {
   c.strokeStyle = rgbaStr(palette.deepCore, .48); c.lineWidth = .025; c.stroke();
 
   const green = c.createLinearGradient(-.55, -.5, .45, .2);
-  green.addColorStop(0, '#91AF76'); green.addColorStop(.45, '#60804D'); green.addColoarStop(1, '#365C3E');
+  green.addColorStop(0, '#91AF76'); green.addColorStop(.45, '#60804D'); green.addColorStop(1, '#365C3E');
   c.fillStyle = green;
   // Pointed sepals hug the closed flower rather than radiating around an open face.
   [
